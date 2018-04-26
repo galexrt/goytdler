@@ -19,12 +19,11 @@ func Index(c *gin.Context) {
 func Download(c *gin.Context) {
 	paramURL := c.PostForm("url")
 	if paramURL == "" {
-		c.HTML(http.StatusBadRequest, "/templates/error.tmpl", nil)
+		c.HTML(http.StatusBadRequest, "/templates/error.tmpl", fmt.Errorf("no url given, try again"))
 		return
 	}
 
 	cmdName := options.Opts.YoutubeDLPath
-	// TODO use flag values
 
 	cmdArgs := []string{"-x", "--audio-format=mp3", "--format=bestvideo+bestaudio", "--audio-quality=0", paramURL}
 
@@ -32,7 +31,7 @@ func Download(c *gin.Context) {
 	cmd.Dir = options.Opts.OutputPath
 	cmdReader, err := cmd.StdoutPipe()
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "/templates/error.tmpl", fmt.Errorf("error creating StdoutPipe for Cmd. %+v", err))
+		c.HTML(http.StatusBadRequest, "/templates/error.tmpl", fmt.Errorf("failed to create stdout pipe for command. %+v", err))
 		return
 	}
 
@@ -43,7 +42,7 @@ func Download(c *gin.Context) {
 		if !cmdStarted {
 			err = cmd.Start()
 			if err != nil {
-				w.Write([]byte(fmt.Sprintf("Error starting Cmd %+v", err)))
+				w.Write([]byte(fmt.Sprintf("failed to run command. %+v", err)))
 				return false
 			}
 		}
@@ -54,7 +53,7 @@ func Download(c *gin.Context) {
 		}
 		err = cmd.Wait()
 		if err != nil {
-			w.Write([]byte(fmt.Sprintf("Error waiting for Cmd %+v", err)))
+			w.Write([]byte(fmt.Sprintf("failed waiting for command. %+v", err)))
 			return false
 		}
 		return true
