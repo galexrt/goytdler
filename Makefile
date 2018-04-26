@@ -3,16 +3,17 @@ DESCRIPTION ?= goytdler - Simple webinterface to use youtube-dl.
 MAINTAINER  ?= Alexander Trost <galexrt@googlemail.com>
 HOMEPAGE    ?= https://github.com/galexrt/goytdler
 
-GO           := go
-FPM          ?= fpm
-PROMU        := $(GOPATH)/bin/promu
-PREFIX       ?= $(shell pwd)
-BIN_DIR      ?= $(PREFIX)/.build
-TARBALL_DIR  ?= $(PREFIX)/.tarball
-PACKAGE_DIR  ?= $(PREFIX)/.package
-ARCH         ?= amd64
-PACKAGE_ARCH ?= linux-amd64
-VERSION      ?= $(shell cat VERSION)
+GO              := go
+FPM             ?= fpm
+PROMU           := $(GOPATH)/bin/promu
+GOASSETSBUILDER := $(GOPATH)/bin/go-assets-builder
+PREFIX          ?= $(shell pwd)
+BIN_DIR         ?= $(PREFIX)/.build
+TARBALL_DIR     ?= $(PREFIX)/.tarball
+PACKAGE_DIR     ?= $(PREFIX)/.package
+ARCH            ?= amd64
+PACKAGE_ARCH    ?= linux-amd64
+VERSION         ?= $(shell cat VERSION)
 
 pkgs = $(shell go list ./... | grep -v /vendor/ | grep -v /test/)
 
@@ -21,10 +22,10 @@ DOCKER_IMAGE_TAG  ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 
 all: format style vet test build
 
-build: promu
+build: promu bindata
 	@$(PROMU) build --prefix $(PREFIX)
 
-crossbuild: promu
+crossbuild: promu bindata
 	@$(PROMU) crossbuild
 
 docker:
@@ -75,5 +76,14 @@ test-short:
 vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
+
+go-assets-builder:
+	@echo ">> fetching go-assets-builder"
+	@GOOS="$(shell uname -s | tr A-Z a-z)" \
+	GOARCH="$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m)))" \
+	$(GO) get -u github.com/jessevdk/go-assets-builder
+
+bindata: go-assets-builder
+	$(GOASSETSBUILDER) -o data/assets.go -p data templates
 
 .PHONY: all build crossbuild docker format promu style tarball test vet
