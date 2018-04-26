@@ -103,8 +103,9 @@ func main() {
 	<-quit
 	logger.Info("shutting down")
 
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	srv.Shutdown(ctx)
+	cancel()
 
 	logger.Infof("exiting")
 }
