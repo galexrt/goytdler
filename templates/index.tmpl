@@ -7,7 +7,7 @@
         <h1>goytdler</h1>
         <p>Simple webinterface to use youtube-dl.</p>
         <hr>
-        <form method="POST" action="/download">
+        <form method="POST" action="{{ .RoutesBasePath }}download">
             <input type="text" name="url" placeholder="Youtube-DL compatible Link" />
             <input type="submit" value="Submit" />
         </form>

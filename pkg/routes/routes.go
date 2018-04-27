@@ -13,7 +13,9 @@ import (
 )
 
 func Index(c *gin.Context) {
-	c.HTML(http.StatusOK, "/templates/index.tmpl", nil)
+	c.HTML(http.StatusOK, "/templates/index.tmpl", map[string]string{
+		"RoutesBasePath": options.Opts.RoutesBasePath,
+	})
 }
 
 func Download(c *gin.Context) {

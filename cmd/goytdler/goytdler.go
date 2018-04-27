@@ -65,6 +65,7 @@ func init() {
 	goytdlerFlags.StringVar(&options.Opts.ListenAddress, "listen-address", ":1454", "IP:PORT leave IP empty for wildcard listen")
 	goytdlerFlags.StringVar(&options.Opts.YoutubeDLPath, "youtube-dl-path", "/usr/bin/youtube-dl", "Path to the youtube-dl executable")
 	goytdlerFlags.StringVar(&options.Opts.OutputPath, "output-path", "./goytdler-output", "Output path for youtube-dl downloads")
+	goytdlerFlags.StringVar(&options.Opts.RoutesBasePath, "routes-base-path", "/", "Routes base path, must end in /")
 
 	goytdlerFlags.Parse(os.Args[1:])
 }
@@ -84,8 +85,8 @@ func main() {
 	}
 	r.SetHTMLTemplate(t)
 
-	r.GET("/", routes.Index)
-	r.POST("/download", routes.Download)
+	r.GET(options.Opts.RoutesBasePath+"", routes.Index)
+	r.POST(options.Opts.RoutesBasePath+"download", routes.Download)
 
 	srv := &http.Server{
 		Addr:    options.Opts.ListenAddress,
