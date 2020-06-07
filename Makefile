@@ -3,7 +3,8 @@ DESCRIPTION ?= goytdler - Simple webinterface to use youtube-dl.
 MAINTAINER  ?= Alexander Trost <galexrt@googlemail.com>
 HOMEPAGE    ?= https://github.com/galexrt/goytdler
 
-GO              := go
+GO111MODULE     ?= on
+GO              ?= go
 FPM             ?= fpm
 PROMU           := $(GOPATH)/bin/promu
 GOASSETSBUILDER := $(GOPATH)/bin/go-assets-builder
@@ -13,7 +14,24 @@ TARBALL_DIR     ?= $(PREFIX)/.tarball
 PACKAGE_DIR     ?= $(PREFIX)/.package
 ARCH            ?= amd64
 PACKAGE_ARCH    ?= linux-amd64
-VERSION         ?= $(shell cat VERSION)
+
+# The GOHOSTARM and PROMU parts have been taken from the prometheus/promu repository
+# which is licensed under Apache License 2.0 Copyright 2018 The Prometheus Authors
+FIRST_GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
+
+GOHOSTOS     ?= $(shell $(GO) env GOHOSTOS)
+GOHOSTARCH   ?= $(shell $(GO) env GOHOSTARCH)
+
+ifeq (arm, $(GOHOSTARCH))
+	GOHOSTARM ?= $(shell GOARM= $(GO) env GOARM)
+	GO_BUILD_PLATFORM ?= $(GOHOSTOS)-$(GOHOSTARCH)v$(GOHOSTARM)
+else
+	GO_BUILD_PLATFORM ?= $(GOHOSTOS)-$(GOHOSTARCH)
+endif
+
+PROMU_VERSION ?= 0.5.0
+PROMU_URL     := https://github.com/prometheus/promu/releases/download/v$(PROMU_VERSION)/promu-$(PROMU_VERSION).$(GO_BUILD_PLATFORM).tar.gz
+# END copied code
 
 pkgs = $(shell go list ./... | grep -v /vendor/ | grep -v /test/)
 
@@ -25,8 +43,15 @@ all: format style vet test build
 build: promu bindata
 	@$(PROMU) build --prefix $(PREFIX)
 
-crossbuild: promu bindata
-	@$(PROMU) crossbuild
+check_license:
+	@OUTPUT="$$(promu check licenses)"; \
+	if [[ $$OUTPUT ]]; then \
+		echo "Found go files without license header:"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	else \
+		echo "All files with license header"; \
+	fi
 
 docker:
 	@echo ">> building docker image"
@@ -35,7 +60,6 @@ docker:
 format:
 	go fmt $(pkgs)
 
-.PHONY: package
 package-%: build
 	mkdir -p -m0755 $(PACKAGE_DIR)/lib/systemd/system $(PACKAGE_DIR)/usr/bin
 	mkdir -p $(PACKAGE_DIR)/etc/sysconfig
@@ -45,7 +69,7 @@ package-%: build
 	cd $(PACKAGE_DIR) && $(FPM) -s dir -t $(patsubst package-%, %, $@) \
 	--deb-user root --deb-group root \
 	--name $(PROJECTNAME) \
-	--version $(VERSION) \
+	--version $(shell cat VERSION) \
 	--architecture $(PACKAGE_ARCH) \
 	--description "$(DESCRIPTION)" \
 	--maintainer "$(MAINTAINER)" \
@@ -86,4 +110,4 @@ go-assets-builder:
 bindata: go-assets-builder
 	$(GOASSETSBUILDER) -o data/assets.go -p data templates
 
-.PHONY: all build crossbuild docker format promu style tarball test vet
+.PHONY: all build crossbuild docker format package promu style tarball test vet

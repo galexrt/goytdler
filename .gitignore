@@ -23,5 +23,9 @@ _testmain.go
 *.test
 *.prof
 
-dist/
+/.bin/
+/.build/
+/.tarballs/
+/.package/
+
 /goytdler

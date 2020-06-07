@@ -1,2 +1,3 @@
 # goytdler
-Simple webinterface to use youtube-dl.
+
+Simple webapp to use `youtube-dl`.
