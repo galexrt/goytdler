@@ -1,3 +1,7 @@
+## 0.0.8 / 2020-06-09
+
+* [ENHANCEMENT] ci: new release
+
 ## 0.0.7 / 2020-06-07
 
 * [ENHANCEMENT] ci: use GitHub actions
